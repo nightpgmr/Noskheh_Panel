@@ -1,37 +1,81 @@
 <template>
   <div class="sidebar-bg hidden lg:block lg:top-0 lg:left-0 lg:h-screen lg:w-30 lg:p-4 border-l border-gray-100 bg-white/70 backdrop-blur-md shadow-lg">
     <div class="w-full h-full space-y-6 mt-12 flex flex-col items-center justify-start">
-      <Icon 
-        name="mdi:home-outline" 
-        mode="svg" 
-        class="h-12 w-12 my-6 text-gray-400 hover:text-gray-600 cursor-pointer" 
-      />
-      <Icon 
-        name="mdi:users-outline" 
-        mode="svg" 
-        class="h-12 w-12 my-6 text-gray-400 hover:text-gray-600 cursor-pointer" 
-      />
-      <Icon 
-        name="mdi:beaker-outline" 
-        mode="svg" 
-        class="h-12 w-12 my-6 text-blue-600 cursor-pointer" 
-      />
-      <Icon 
-        name="mdi:shopping-outline" 
-        mode="svg" 
-        class="h-12 w-12 my-6 text-gray-400 hover:text-gray-600 cursor-pointer" 
-      />
-      <Icon 
-        name="mdi:cog-outline" 
-        mode="svg" 
-        class="h-12 w-12 my-6 text-gray-400 hover:text-gray-600 cursor-pointer" 
-      />
+      <NuxtLink 
+        to="/"
+        class="flex items-center justify-center"
+      >
+        <Icon 
+          name="mdi:home-outline" 
+          mode="svg" 
+          :class="[
+            'h-12 w-12 my-6 cursor-pointer transition-colors',
+            isActive('/') ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
+          ]"
+        />
+      </NuxtLink>
+      <NuxtLink 
+        to="/users"
+        class="flex items-center justify-center"
+      >
+        <Icon 
+          name="mdi:users-outline" 
+          mode="svg" 
+          :class="[
+            'h-12 w-12 my-6 cursor-pointer transition-colors',
+            isActive('/users') ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
+          ]"
+        />
+      </NuxtLink>
+      <NuxtLink 
+        to="/medications"
+        class="flex items-center justify-center"
+      >
+        <Icon 
+          name="mdi:beaker-outline" 
+          mode="svg" 
+          :class="[
+            'h-12 w-12 my-6 cursor-pointer transition-colors',
+            isActive('/medications') ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
+          ]"
+        />
+      </NuxtLink>
+      <NuxtLink 
+        to="/shopping"
+        class="flex items-center justify-center"
+      >
+        <Icon 
+          name="mdi:shopping-outline" 
+          mode="svg" 
+          :class="[
+            'h-12 w-12 my-6 cursor-pointer transition-colors',
+            isActive('/shopping') ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
+          ]"
+        />
+      </NuxtLink>
+      <NuxtLink 
+        to="/settings"
+        class="flex items-center justify-center"
+      >
+        <Icon 
+          name="mdi:cog-outline" 
+          mode="svg" 
+          :class="[
+            'h-12 w-12 my-6 cursor-pointer transition-colors',
+            isActive('/settings') ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
+          ]"
+        />
+      </NuxtLink>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-// Sidebar navigation component
+const route = useRoute()
+
+const isActive = (path: string) => {
+  return route.path === path
+}
 </script>
 
 <style scoped>
