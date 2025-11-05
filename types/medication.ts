@@ -21,7 +21,9 @@ export interface MedicationFilters {
 
 export interface CreateMedicationDto {
   name: string
+  nameEn?: string
   dosage: string
+  duration?: string
   status: MedicationStatus
   manufacturer: string
   quantityPerPackage: number

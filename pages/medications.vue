@@ -18,12 +18,12 @@
   
       <!-- Loading State -->
       <div v-if="isLoading && medications.length === 0" class="flex-1 flex items-center justify-center">
-        <LoadingSpinner />
+        <UiLoadingSpinner />
       </div>
-  
+
       <!-- Error State -->
       <div v-else-if="error && !isLoading" class="flex-shrink-0">
-        <ErrorMessage :message="error" />
+        <UiErrorMessage :message="error" />
       </div>
   
       <!-- Medications List with Pagination -->
@@ -66,7 +66,7 @@
   
       <!-- Empty State -->
       <div v-else-if="!isLoading && medications.length === 0" class="flex-1 flex items-center justify-center">
-        <EmptyState />
+        <UiEmptyState />
       </div>
   
       <!-- Add Button for empty state -->
@@ -80,7 +80,7 @@
       </div>
 
       <!-- Confirm Dialog -->
-      <ConfirmDialog
+      <UiConfirmDialog
         :is-open="showDeleteConfirm"
         title="حذف دارو"
         message="آیا از حذف این دارو اطمینان دارید؟"
@@ -114,6 +114,7 @@
     manufacturers,
     fetchMedications,
     createMedication,
+    updateMedication,
     deleteMedication,
     updateFilters,
     clearFilters,
@@ -228,8 +229,8 @@
     try {
       if (selectedMedication.value) {
         // Update existing medication
-        // TODO: Implement update functionality
-        console.log('Update medication:', selectedMedication.value.id, data)
+        await updateMedication(selectedMedication.value.id, data)
+        handleCloseForm()
       } else {
         // Create new medication
         await createMedication(data)

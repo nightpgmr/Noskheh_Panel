@@ -1,4 +1,6 @@
 import { defineEventHandler, readBody, createError } from 'h3'
+import { db } from '~/server/db'
+import { medications } from '~/server/db/schema'
 import type { CreateMedicationDto, Medication } from '~/types/medication'
 
 export default defineEventHandler(async (event) => {
@@ -12,12 +14,29 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // In real app, save to database
-  const newMedication: Medication = {
-    id: Date.now(), // Use proper ID generation in production
-    ...body,
-    imageUrl: body.imageUrl || '/images/daro.jpg'
+  // Insert into database
+  const [newMedication] = await db.insert(medications).values({
+    name: body.name,
+    nameEn: body.nameEn,
+    dosage: body.dosage,
+    duration: body.duration,
+    status: body.status,
+    manufacturer: body.manufacturer,
+    quantityPerPackage: body.quantityPerPackage,
+    imageUrl: body.imageUrl || '/images/daro.jpg',
+  }).returning()
+
+  const result: Medication = {
+    id: newMedication.id,
+    name: newMedication.name,
+    nameEn: newMedication.nameEn || undefined,
+    dosage: newMedication.dosage,
+    duration: newMedication.duration || undefined,
+    status: newMedication.status as 'فعال' | 'غیرفعال' | 'تمام شده',
+    manufacturer: newMedication.manufacturer,
+    quantityPerPackage: newMedication.quantityPerPackage,
+    imageUrl: newMedication.imageUrl || undefined,
   }
 
-  return newMedication
+  return result
 })

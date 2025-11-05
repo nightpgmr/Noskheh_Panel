@@ -73,6 +73,33 @@ export const useMedications = () => {
     }
   }
 
+  // Update medication
+  const updateMedication = async (id: number, medicationData: Partial<CreateMedicationDto>) => {
+    isLoading.value = true
+    error.value = null
+
+    try {
+      const updatedMedication = await medicationService.update(id, medicationData)
+      
+      // Update in place to preserve sort order
+      const index = medications.value.findIndex(m => m.id === id)
+      if (index !== -1) {
+        medications.value[index] = updatedMedication
+      } else {
+        // If not found, refetch (shouldn't happen, but safety check)
+        await fetchMedications()
+      }
+      
+      return updatedMedication
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update medication'
+      error.value = errorMessage
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   // Delete medication
   const deleteMedication = async (id: number) => {
     isLoading.value = true
@@ -151,6 +178,7 @@ export const useMedications = () => {
     // Methods
     fetchMedications,
     createMedication,
+    updateMedication,
     deleteMedication,
     updateFilters,
     clearFilters,

@@ -11,7 +11,19 @@
   </template>
   
   <script setup>
-  // Layout component
+  import { useAuth } from '~/Composables/useAuth'
+  
+  const { fetchUser } = useAuth()
+
+  // Fetch user on mount
+  onMounted(async () => {
+    try {
+      await fetchUser()
+    } catch (error) {
+      // User not authenticated, redirect to login
+      await navigateTo('/login')
+    }
+  })
   </script>
   
   <style scoped>

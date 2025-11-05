@@ -195,24 +195,62 @@
               </div>
             </div>
 
-            <!-- Image URL -->
-            <div class="relative">
-              <input
-                id="imageUrl"
-                v-model="formData.imageUrl"
-                type="url"
-                placeholder=" "
-                @focus="setFocus('imageUrl')"
-                @blur="removeFocus('imageUrl')"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg text-right text-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:outline-none transition-colors h-14 bg-white"
-              />
-              <label
-                for="imageUrl"
-                class="absolute right-4 top-3 text-gray-500 transition-all duration-200 pointer-events-none"
-                :class="formData.imageUrl || isFocused('imageUrl') ? 'top-0 right-3 -translate-y-1/2 text-xs text-purple-600 bg-white px-2' : ''"
-              >
-                آدرس تصویر
-              </label>
+            <!-- Image URL / Upload -->
+            <div class="space-y-3">
+              <!-- Upload Button -->
+              <div class="flex items-center gap-3">
+                <label
+                  for="imageUpload"
+                  class="flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 cursor-pointer transition-colors text-sm font-medium"
+                >
+                  <Icon name="mdi:upload" mode="svg" class="h-5 w-5" />
+                  آپلود تصویر
+                </label>
+                <input
+                  id="imageUpload"
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                  class="hidden"
+                  @change="handleImageUpload"
+                />
+                <span v-if="isUploading" class="text-sm text-gray-500 flex items-center gap-2">
+                  <Icon name="mdi:loading" mode="svg" class="h-4 w-4 animate-spin" />
+                  در حال آپلود...
+                </span>
+              </div>
+              
+              <!-- Image Preview -->
+              <div v-if="imagePreview" class="relative w-full h-32 border border-gray-300 rounded-lg overflow-hidden bg-gray-100">
+                <img :src="imagePreview" alt="Preview" class="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  @click="clearImagePreview"
+                  class="absolute top-2 left-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                  title="حذف تصویر"
+                >
+                  <Icon name="mdi:close" mode="svg" class="h-4 w-4" />
+                </button>
+              </div>
+
+              <!-- Image URL Input -->
+              <div class="relative">
+                <input
+                  id="imageUrl"
+                  v-model="formData.imageUrl"
+                  type="text"
+                  placeholder=" "
+                  @focus="setFocus('imageUrl')"
+                  @blur="removeFocus('imageUrl')"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg text-right text-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:outline-none transition-colors h-14 bg-white"
+                />
+                <label
+                  for="imageUrl"
+                  class="absolute right-4 top-3 text-gray-500 transition-all duration-200 pointer-events-none"
+                  :class="formData.imageUrl || isFocused('imageUrl') ? 'top-0 right-3 -translate-y-1/2 text-xs text-purple-600 bg-white px-2' : ''"
+                >
+                  یا آدرس تصویر (مثال: /images/daro.jpg)
+                </label>
+              </div>
             </div>
           </div>
         </div>
@@ -287,6 +325,8 @@ const formData = ref<FormData>({
 
 const isSubmitting = ref(false)
 const error = ref<string | null>(null)
+const isUploading = ref(false)
+const imagePreview = ref<string | null>(null)
 
 // Focus states for floating labels
 const focusedFields = ref<Set<string>>(new Set())
@@ -321,8 +361,17 @@ watch(() => props.medication, (medication) => {
       quantityPerPackage: medication.quantityPerPackage || '',
       imageUrl: medication.imageUrl || ''
     }
+    // Set preview if image URL exists (use full URL for external images or relative path for local)
+    if (medication.imageUrl) {
+      imagePreview.value = medication.imageUrl.startsWith('http') 
+        ? medication.imageUrl 
+        : medication.imageUrl
+    } else {
+      imagePreview.value = null
+    }
   } else {
     resetForm()
+    imagePreview.value = null
   }
 }, { immediate: true })
 
@@ -331,8 +380,73 @@ watch(() => props.isOpen, (isOpen) => {
   if (!isOpen) {
     resetForm()
     error.value = null
+    imagePreview.value = null
   }
 })
+
+// Handle image upload
+const handleImageUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  
+  if (!file) {
+    return
+  }
+
+  // Validate file type
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+  if (!allowedTypes.includes(file.type)) {
+    error.value = 'نوع فایل نامعتبر است. فقط تصاویر JPEG، PNG، GIF و WebP مجاز هستند.'
+    return
+  }
+
+  // Validate file size (max 5MB)
+  const maxSize = 5 * 1024 * 1024 // 5MB
+  if (file.size > maxSize) {
+    error.value = 'حجم فایل بیشتر از ۵ مگابایت است.'
+    return
+  }
+
+  // Show preview immediately
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    imagePreview.value = e.target?.result as string
+  }
+  reader.readAsDataURL(file)
+
+  // Upload file
+  isUploading.value = true
+  error.value = null
+
+  try {
+    const uploadFormData = new FormData()
+    uploadFormData.append('image', file)
+
+    const response = await $fetch('/api/upload/image', {
+      method: 'POST',
+      body: uploadFormData,
+    })
+
+    if (response.success) {
+      // Set the uploaded image path
+      formData.value.imageUrl = response.path
+      imagePreview.value = response.path
+    }
+  } catch (err: any) {
+    error.value = err.data?.message || 'خطا در آپلود تصویر'
+    imagePreview.value = null
+  } finally {
+    isUploading.value = false
+    // Reset file input
+    target.value = ''
+  }
+}
+
+// Clear image preview
+const clearImagePreview = () => {
+  imagePreview.value = null
+  formData.value.imageUrl = ''
+}
 
 const handleClose = () => {
   emit('close')
@@ -354,9 +468,18 @@ const handleSubmit = async () => {
       status: formData.value.status,
       manufacturer: formData.value.manufacturer.trim(),
       quantityPerPackage: quantity,
-      ...(formData.value.imageUrl?.trim() && { imageUrl: formData.value.imageUrl.trim() }),
-      ...(formData.value.duration?.trim() && { duration: formData.value.duration.trim() }),
-      ...(formData.value.nameEn?.trim() && { nameEn: formData.value.nameEn.trim() })
+    }
+
+    // Add optional fields if they have values
+    if (formData.value.imageUrl?.trim()) {
+      // Remove trailing slashes from image URL
+      submitData.imageUrl = formData.value.imageUrl.trim().replace(/\/+$/, '')
+    }
+    if (formData.value.duration?.trim()) {
+      submitData.duration = formData.value.duration.trim()
+    }
+    if (formData.value.nameEn?.trim()) {
+      submitData.nameEn = formData.value.nameEn.trim()
     }
 
     emit('submit', submitData)
